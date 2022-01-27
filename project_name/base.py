@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 """
 project_name base module.
 
