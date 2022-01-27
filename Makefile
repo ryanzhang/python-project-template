@@ -123,7 +123,13 @@ testdist:
 .PHONY: sdist
 sdist:
 	twine upload dist/*
-	
+
+# Make container image by podman
+#You would need podman for this
+.PHONY: image
+image:
+	@read -p "Version? (provide the next x.y.z version,Suggest projectversion-buildtag, eg: 0.0.1-1) : " TAG
+	podman build -f Containerfile . -t project_name:$${TAG}	
 # This project has been generated from ryanzhang/python-project-template which is forked from 
 # rochacbruno/python-project-template
 # __author__ = 'rochacbruno'
