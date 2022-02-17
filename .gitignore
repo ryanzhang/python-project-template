@@ -5,6 +5,7 @@ __pycache__/
 **/*.csv
 **/*.pkl
 **/Pipfile
+*.systest*
 
 # C extensions
 *.so

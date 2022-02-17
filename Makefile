@@ -154,6 +154,7 @@ systest:
 .PHONY: deploy-dev tag-dev deploy-prod
 tag-dev:
 	@oc apply -f .openshift/dev/cm.yaml
+	@oc apply -f .openshift/dev/cronjob-project_name-deployment.yaml
 	@git checkout project_name/VERSION
 	@sleep 1
 	@PRE_TAG=$(shell cat project_name/VERSION);\
@@ -166,6 +167,8 @@ tag-dev:
 stagedeploy: test image systest tag-dev release
 
 proddeploy:
+	@oc apply -f .openshift/prod/cm.yaml
+	@oc apply -f .openshift/prod/cronjob-project_name-deployment.yaml
 	@TAG=$(shell cat project_name/VERSION);\
 	oc tag classic-dev/project_name:$${TAG} quant-invest/project_name:$${TAG};\
 	oc set image cronjob/project_name project_name=image-registry.openshift-image-registry.svc:5000/quant-invest/project_name:$${TAG} -n quant-invest;\
