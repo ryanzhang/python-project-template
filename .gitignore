@@ -2,6 +2,10 @@
 __pycache__/
 *.py[cod]
 *$py.class
+**/.vscode
+**/*.csv
+**/*.pkl
+**/Pipfile
 
 # C extensions
 *.so

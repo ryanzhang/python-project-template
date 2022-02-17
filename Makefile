@@ -49,19 +49,19 @@ watch:            ## Run tests on every change.
 
 .PHONY: clean
 clean:            ## Clean unused files.
-	@find ./ -name '*.pyc' -exec rm -f {} \;
-	@find ./ -name '__pycache__' -exec rm -rf {} \;
-	@find ./ -name 'Thumbs.db' -exec rm -f {} \;
-	@find ./ -name '*~' -exec rm -f {} \;
-	@rm -rf .cache
-	@rm -rf .pytest_cache
-	@rm -rf .mypy_cache
-	@rm -rf build
-	@rm -rf dist
-	@rm -rf *.egg-info
-	@rm -rf htmlcov
-	@rm -rf .tox/
-	@rm -rf docs/_build
+	-find ./ -name '*.pyc' -exec rm -f {} \;
+	-find ./ -name '__pycache__' -exec rm -rf {} \;
+	-find ./ -name 'Thumbs.db' -exec rm -f {} \;
+	-find ./ -name '*~' -exec rm -f {} \;
+	-rm -rf .cache
+	-rm -rf .pytest_cache
+	-rm -rf .mypy_cache
+	-rm -rf build
+	-rm -rf dist
+	-rm -rf *.egg-info
+	-rm -rf htmlcov
+	-rm -rf .tox/
+	-rm -rf docs/_build
 
 .PHONY: virtualenv
 virtualenv:       ## Create a virtual environment.
@@ -75,15 +75,14 @@ virtualenv:       ## Create a virtual environment.
 	@echo "!!! Please run 'source .venv/bin/activate' to enable the environment !!!"
 
 .PHONY: release
-release:          ## Create a new tag for release.
-	@echo "WARNING: This operation will create s version tag and push to github"
-	@read -p "Version? (provide the next x.y.z semver) : " TAG
-	@echo "$${TAG}" > project_name/VERSION
+release:          ## Create a new tag for release.	
 	@$(ENV_PREFIX)gitchangelog > HISTORY.md
-	@git add project_name/VERSION HISTORY.md
-	@git commit -m "release: version $${TAG} 🚀"
-	@echo "creating git tag : $${TAG}"
-	@git tag $${TAG}
+	@TAG=v$(shell cat project_name/VERSION);\
+	sed -i "s=unreleased=$${TAG}=g" HISTORY.md||True;\
+	git add project_name/VERSION HISTORY.md;\
+	git commit -m "release: version $${TAG} 🚀";\
+	echo "creating git tag : $${TAG}";\
+	git tag $${TAG}; 
 	@git push -u origin HEAD --tags
 	@echo "Github Actions will detect the new tag and release the new version."
 
@@ -126,10 +125,53 @@ sdist:
 
 # Make container image by podman
 #You would need podman for this
-.PHONY: image
+.PHONY: image systest looptest
 image:
-	@read -p "Version? (provide the next x.y.z version,Suggest projectversion-buildtag, eg: 0.0.1-1) : " TAG
-	podman build -f Containerfile . -t project_name:$${TAG}	
+	https_prox=http://192.168.2.15:3128 podman build -f Containerfile . -t default-route-openshift-image-registry.apps.ocp1.galaxy.io/classic-dev/project_name:latest
+	podman push default-route-openshift-image-registry.apps.ocp1.galaxy.io/classic-dev/project_name:latest --tls-verify=false
+
+systest:
+	rm -rf .systestpass
+	@oc apply -f .openshift/dev/cm.yaml
+	-oc delete job systest-project_name -n classic-dev
+	@oc apply -f .openshift/dev/systest-job-project_name-deployment.yaml
+	# Wait 5 seconds
+	@sleep  5
+	@for i in 1 2 3 4 ; do \
+		sleep 3;\
+		rc=`oc get job systest-project_name --template '{{.status.succeeded}}'`;\
+		echo -e ".$${rc}" ;\
+		test "$${rc}" == 1 && echo "pass" && touch .systestpass; \
+		if [ -a .systestpass ];then \
+			break;\
+		fi \
+	done
+	@if [[ ! -a .systestpass ]];then \
+		echo "Failed" && exit 1;\
+	fi
+
+
+.PHONY: deploy-dev tag-dev deploy-prod
+tag-dev:
+	@oc apply -f .openshift/dev/cm.yaml
+	@git checkout project_name/VERSION
+	@sleep 1
+	@PRE_TAG=$(shell cat project_name/VERSION);\
+	read -p "Version? (provide the next x.y.z version,Previous tag, $${PRE_TAG}) : " TAG ;\
+	echo "$${TAG}" > project_name/VERSION;\
+	oc tag classic-dev/project_name:latest classic-dev/project_name:$${TAG};\
+	oc set image cronjob/project_name project_name=image-registry.openshift-image-registry.svc:5000/classic-dev/project_name:$${TAG} -n classic-dev;\
+	echo "Release $${TAG} has been deployed successfullyto stage environment!"
+
+stagedeploy: test image systest tag-dev release
+
+proddeploy:
+	@TAG=$(shell cat project_name/VERSION);\
+	oc tag classic-dev/project_name:$${TAG} quant-invest/project_name:$${TAG};\
+	oc set image cronjob/project_name project_name=image-registry.openshift-image-registry.svc:5000/quant-invest/project_name:$${TAG} -n quant-invest;\
+	echo "Release $${TAG} has been deployed successfullyto production🚀!"
+	
+
 # This project has been generated from ryanzhang/python-project-template which is forked from 
 # rochacbruno/python-project-template
 # __author__ = 'rochacbruno'
