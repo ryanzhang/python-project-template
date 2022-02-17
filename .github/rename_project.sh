@@ -31,6 +31,7 @@ do
 done
 
 mv project_name $name
+find . -name "*project_name*" |  sed  's/\(\(.*\)project_name\(.*\)\)/\1 \2bsery\3/g' | while read name1 name2; do mv $name1 $name2; done
 
 # This command runs only once on GHA!
 rm -rf .github/template.yml
