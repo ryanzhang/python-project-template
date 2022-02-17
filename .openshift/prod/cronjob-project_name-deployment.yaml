@@ -1,0 +1,50 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  annotations:
+    image.openshift.io/triggers: "null"
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"batch/v1beta1","kind":"CronJob","metadata":{"annotations":{},"name":"project_name","namespace":"quant-invest"},"spec":{"concurrencyPolicy":"Forbid","failedJobsHistoryLimit":1,"jobTemplate":{"spec":{"template":{"metadata":{"labels":{"parent":"cronjob"}},"spec":{"containers":[{"command":["project_name"],"env":[{"name":"TZ","value":"Asia/Shanghai"}],"image":"project_name:latest","name":"project_name","resources":{"limits":{"memory":"1Gi"}},"volumeMounts":[{"mountPath":"/app/project_name/data","name":"project_name-data-volume"},{"mountPath":"/app/project_name/resources/app-config.properties","name":"project_name-properties-volume","readOnly":false,"subPath":"app-config.properties"}]}],"restartPolicy":"Never","volumes":[{"name":"project_name-data-volume","persistentVolumeClaim":{"claimName":"project_name-data"}},{"configMap":{"defaultMode":272,"name":"project_name-main-config","optional":false},"name":"project_name-properties-volume"}]}}}},"schedule":"* * * * *","startingDeadlineSeconds":600,"successfulJobsHistoryLimit":3,"suspend":false}}
+  name: project_name
+  namespace: quant-invest
+spec:
+  schedule: "15 10 * * 1-5"
+  concurrencyPolicy: "Forbid"
+  startingDeadlineSeconds: 600
+  suspend: false
+  successfulJobsHistoryLimit: 9
+  failedJobsHistoryLimit: 5
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            parent: "cronjob"
+        spec:
+          containers:
+            - name: project_name
+              image: image-registry.openshift-image-registry.svc:5000/quant-invest/project_name:1.0.1-2
+              command: ["project_name"]
+              env:
+              - name: TZ
+                value: Asia/Shanghai
+              resources:
+                limits:
+                  memory: 1Gi
+              volumeMounts:
+                - mountPath: /app/project_name/data
+                  name: project_name-data-volume
+                - mountPath: /app/project_name/resources/app-config.properties
+                  subPath: app-config.properties
+                  readOnly: false
+                  name: project_name-properties-volume
+          volumes:
+            - persistentVolumeClaim:
+                claimName: project_name-data
+              name: project_name-data-volume
+            - configMap:
+                name: project_name-main-config
+                defaultMode: 272
+                optional: false
+              name: project_name-properties-volume
+          restartPolicy: Never

@@ -1,0 +1,43 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    image.openshift.io/triggers: "null"
+  name: systest-project_name
+  namespace: classic-dev
+spec:
+  parallelism: 1    
+  completions: 1    
+  backoffLimit: 1
+  activeDeadlineSeconds: 1800
+  template:         
+    metadata:
+      name: project_name
+    spec:
+      containers:
+        - name: project_name
+          image: image-registry.openshift-image-registry.svc:5000/classic-dev/project_name:latest
+          command: ["project_name"]
+          env:
+          - name: TZ
+            value: Asia/Shanghai
+          resources:
+            limits:
+              memory: 1Gi
+          volumeMounts:
+            - mountPath: /app/project_name/data
+              name: project_name-data-volume
+            - mountPath: /app/project_name/resources/app-config.properties
+              subPath: app-config.properties
+              readOnly: false
+              name: project_name-properties-volume
+      volumes:
+        - persistentVolumeClaim:
+            claimName: project_name-data
+          name: project_name-data-volume
+        - configMap:
+            name: project_name-main-config
+            defaultMode: 272
+            optional: false
+          name: project_name-properties-volume
+      restartPolicy: Never 
