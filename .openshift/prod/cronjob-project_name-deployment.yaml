@@ -32,9 +32,9 @@ spec:
                 limits:
                   memory: 1Gi
               volumeMounts:
-                - mountPath: /app/project_name/data
+                - mountPath: /app/data
                   name: project_name-data-volume
-                - mountPath: /app/project_name/resources/app-config.properties
+                - mountPath: /app/resources/app-config.properties
                   subPath: app-config.properties
                   readOnly: false
                   name: project_name-properties-volume

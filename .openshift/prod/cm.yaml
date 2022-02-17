@@ -9,8 +9,8 @@ data:
     postgres_database=market
 
     log_level=DEBUG
-    log_output_path=/app/project_name/data/log/sys-app.log
-    cache_folder=/app/project_name/data/cache/
+    log_output_path=/app/data/log/sys-app.log
+    data_folder=/app/data/cache/
 kind: ConfigMap
 metadata:
   name: project_name-main-config
