@@ -1,6 +1,7 @@
 import sys
 import pytest
 
+from kupy.logger import logger
 
 # each test runs on cwd to its temp dir
 @pytest.fixture(autouse=True)
