@@ -18,11 +18,15 @@ show:             ## Show the current environment.
 	@$(ENV_PREFIX)python -V
 	@$(ENV_PREFIX)python -m site
 
-.PHONY: install
+.PHONY: install installdep
 install:          ## Install the project in dev mode.
 	@if [ "$(USING_POETRY)" ]; then poetry install && exit; fi
 	@echo "Don't forget to run 'make virtualenv' if you got errors."
 	$(ENV_PREFIX)pip install -e .[test]
+
+installdep:
+	$(ENV_PREFIX)pip install -r requirements.txt -U
+
 
 .PHONY: fmt
 fmt:              ## Format code using black & isort.
@@ -127,6 +131,7 @@ sdist:
 #You would need podman for this
 .PHONY: image systest looptest
 image:
+	@oc project|grep "classic-dev||exit 1
 	https_prox=http://192.168.2.15:3128 podman build -f Containerfile . -t default-route-openshift-image-registry.apps.ocp1.galaxy.io/classic-dev/project_name:latest
 	podman push default-route-openshift-image-registry.apps.ocp1.galaxy.io/classic-dev/project_name:latest --tls-verify=false
 
@@ -164,9 +169,9 @@ tag-dev:
 	oc set image cronjob/project_name project_name=image-registry.openshift-image-registry.svc:5000/classic-dev/project_name:$${TAG} -n classic-dev;\
 	echo "Release $${TAG} has been deployed successfullyto stage environment!"
 
-stagedeploy: test image systest tag-dev release
+deploystage: installdep test image systest tag-dev release
 
-proddeploy:
+deployprod:
 	@oc apply -f .openshift/prod/cm.yaml
 	@oc apply -f .openshift/prod/cronjob-project_name-deployment.yaml
 	@TAG=$(shell cat project_name/VERSION);\
