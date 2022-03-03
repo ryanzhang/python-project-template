@@ -2,5 +2,4 @@ include LICENSE
 include HISTORY.md
 include Containerfile
 include requirements.txt
-graft tests
 graft project_name
