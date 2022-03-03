@@ -131,7 +131,7 @@ sdist:
 #You would need podman for this
 .PHONY: image systest looptest
 image:
-	@oc project|grep "classic-dev||exit 1
+	@oc project|grep "classic-dev" ||exit 1
 	https_prox=http://192.168.2.15:3128 podman build -f Containerfile . -t default-route-openshift-image-registry.apps.ocp1.galaxy.io/classic-dev/project_name:latest
 	podman push default-route-openshift-image-registry.apps.ocp1.galaxy.io/classic-dev/project_name:latest --tls-verify=false
 
